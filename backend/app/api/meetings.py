@@ -4,12 +4,13 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.db.dependencies import get_db
 from app.models.meeting import Meeting
-from openai import OpenAI
 from app.core.config import settings
+from groq import Groq
 import os
 
 router = APIRouter()
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
 
 
 @router.post("/")
@@ -42,13 +43,13 @@ def summarize_meeting(meeting_id: int, db: Session = Depends(get_db)):
 
     #send transcript to open ai to summarize
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="llama-3.1-8b-instant",
         messages=[
             {"role": "system", "content": "Summarize precisely like granola AI does. Use markdown formatting."},
             {"role": "user", "content": meeting.raw_text}
         ]
     )
-    summary = response.choices[0].message["content"]
+    summary = response.choices[0].message.content
 
     #save 
     meeting.summary = summary
