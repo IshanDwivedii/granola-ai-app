@@ -1,6 +1,16 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import meetings 
+from app.database import Base, engine
+#from app.models.meeting import Meeting
+
+
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
