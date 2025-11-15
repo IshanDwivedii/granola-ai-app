@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = "mysql+pymysql://root:ishan@localhost:3306/granola_ai"
+DATABASE_URL = "postgresql://granola:iso7CeylVtUoZ9GoMVGVMtOSMwlLYJKU@dpg-d4c5aqogjchc73d5mihg-a/granoladb"
 
 print("Using URL:", repr(DATABASE_URL))
 

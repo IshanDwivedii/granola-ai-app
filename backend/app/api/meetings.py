@@ -1,16 +1,13 @@
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.db.dependencies import get_db
+from app.database import get_db
 from app.models.meeting import Meeting
-from app.core.config import settings
 from groq import Groq
 import os
 
 router = APIRouter()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 @router.post("/")
@@ -19,39 +16,41 @@ def create_meeting(title: str, raw_text: str, db: Session = Depends(get_db)):
     db.add(meeting)
     db.commit()
     db.refresh(meeting)
-    return {"message": "Meeting created successfully"}
+    return meeting
+
 
 @router.get("/")
 def list_meetings(db: Session = Depends(get_db)):
     return db.query(Meeting).all()
+
 
 @router.get("/{meeting_id}")
 def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
-    return meeting 
+    return meeting
+
 
 @router.post("/{meeting_id}/summarize")
 def summarize_meeting(meeting_id: int, db: Session = Depends(get_db)):
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
-    
+
     if not meeting.raw_text:
         raise HTTPException(status_code=400, detail="Meeting has no text to summarize")
 
-    #send transcript to open ai to summarize
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
-            {"role": "system", "content": "Summarize precisely like granola AI does. Use markdown formatting."},
+            {"role": "system", "content": "Summarize precisely like Granola AI does. Use markdown."},
             {"role": "user", "content": meeting.raw_text}
         ]
     )
+
     summary = response.choices[0].message.content
 
-    #save 
     meeting.summary = summary
     db.commit()
 
